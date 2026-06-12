@@ -68,6 +68,25 @@ Web: http://localhost:3002 · API: http://localhost:8083
 
 （ローカルで Go 版が :8080 / :3000 を使用中でも競合しません）
 
+## Railway デプロイ
+
+ビルドログ `couldn't locate the dockerfile at path Dockerfile` は、ルートに `Dockerfile` が無い状態で push した場合に発生します。以下をリポジトリ root に含めて再デプロイしてください。
+
+| ファイル | 役割 |
+|---------|------|
+| `railway.toml` | `Dockerfile.unified` を指定 |
+| `Dockerfile.unified` | Spring Boot + Next.js 統合イメージ |
+| `scripts/start-unified.sh` | 起動スクリプト |
+
+**Railway サービス設定**
+
+- Root Directory: **空**（リポジトリ root）
+- Config file path: **`/railway.toml`**
+- Variables: `DATABASE_URL`（Postgres Reference）、`JWT_SECRET`（32 文字以上）
+- **`API_URL` は設定しない**
+
+Healthcheck: `/health` → ログイン後 `/status` で DB 接続確認
+
 ## Go 版との互換
 
 | 項目 | 互換 |

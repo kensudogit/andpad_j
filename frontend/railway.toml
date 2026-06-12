@@ -1,5 +1,5 @@
-# Web-only service when API is separate
-# Root Directory: frontend  |  Config file: /frontend/railway.toml
+# Web-only service when API is separate (Root Directory: frontend)
+# For unified deploy use repo-root /railway.toml instead.
 # Set API_URL to the api service public HTTPS URL.
 
 [build]
