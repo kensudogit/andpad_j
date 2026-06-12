@@ -3,7 +3,7 @@
 
 FROM eclipse-temurin:21-jdk-alpine AS java-build
 WORKDIR /app/backend
-COPY backend/gradle backend/gradle
+COPY backend/gradle gradle
 COPY backend/gradlew backend/gradlew.bat backend/build.gradle backend/settings.gradle ./
 RUN chmod +x gradlew && ./gradlew dependencies --no-daemon || true
 COPY backend/src src
