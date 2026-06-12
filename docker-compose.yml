@@ -1,0 +1,48 @@
+# ANDPAD Java 版 — PostgreSQL + Spring Boot API + Next.js
+# Web http://localhost:3002  API http://localhost:8083/graphql
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: andpad
+      POSTGRES_PASSWORD: andpad
+      POSTGRES_DB: andpad
+    ports:
+      - "5434:5432"
+    volumes:
+      - andpad_j_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andpad -d andpad"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8080"
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/andpad
+      DB_USER: andpad
+      DB_PASSWORD: andpad
+      JWT_SECRET: dev-docker-jwt-secret-minimum-32-characters
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3002:3000"
+    environment:
+      API_URL: http://api:8080
+    depends_on:
+      - api
+
+volumes:
+  andpad_j_pg:

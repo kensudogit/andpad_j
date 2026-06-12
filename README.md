@@ -90,13 +90,13 @@ Web: http://localhost:3002 · API: http://localhost:8083
 - Analytics / API連携 / BIM（JDBC 実装）
 - 学習コンテンツ（動画10本・講師3名・学習パス6本 — JDBC + DemoCatalog）
 - 学習エンゲージメント（進捗・ノート・ブックマーク・クイズ — JDBC）
+- Consult / RAG（スレッド・文書検索 — JDBC、OpenAI 未設定時はルールベース応答）
 - DX / CRM / 勤怠 / 契約（基本 CRUD）
 
 **スタブ（一部未実装）**
 
 - 修了証の自動発行（パス完了時）
-- AI チャット / RAG — 今後 OpenAI 連携
-- Analytics インサイト — ルールベース要約（OpenAI 未設定時）
+- OpenAI 連携（Consult / RAG / AI Board インサイト）
 
 ## 環境変数
 

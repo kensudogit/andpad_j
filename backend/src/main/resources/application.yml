@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: andpad-backend
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5434/andpad}
+    username: ${DB_USER:andpad}
+    password: ${DB_PASSWORD:andpad}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  graphql:
+    path: /graphql
+    graphiql:
+      enabled: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-change-in-production-min-32-chars}
+    ttl-hours: 72
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
