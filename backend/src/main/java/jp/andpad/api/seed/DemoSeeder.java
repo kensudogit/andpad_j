@@ -13,10 +13,12 @@ import jp.andpad.api.demo.DemoCatalog.CatalogPath;
 import jp.andpad.api.demo.DemoCatalog.CatalogVideo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /** org_demo のデモデータ投入（Go 版 seed.go と同等の最小セット）。 */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DemoSeeder {
 
     private static final String DEMO_EMAIL = "demo@sakura-dental.jp";
@@ -26,8 +28,16 @@ public class DemoSeeder {
     private final PasswordEncoder passwordEncoder;
 
     @EventListener(ApplicationReadyEvent.class)
-    @Transactional
     public void seedDemo() {
+        try {
+            seedDemoTx();
+        } catch (Exception ex) {
+            log.error("Demo seed failed (API continues): {}", ex.getMessage(), ex);
+        }
+    }
+
+    @Transactional
+    void seedDemoTx() {
         ensureOrganization();
         ensureDemoUser();
         ensureLearningDemo();

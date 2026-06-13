@@ -66,6 +66,8 @@ if [ -n "${DATABASE_URL:-}" ] && ! ref_unresolved "${DATABASE_URL}"; then
   db_configured=1
 elif [ -n "${DATABASE_PRIVATE_URL:-}" ] && ! ref_unresolved "${DATABASE_PRIVATE_URL}"; then
   db_configured=1
+elif [ -n "${PGHOST:-}" ] && ! ref_unresolved "${PGHOST}"; then
+  db_configured=1
 fi
 
 if [ "$db_configured" -eq 0 ]; then
@@ -81,7 +83,8 @@ else
 
   echo "[unified] starting Spring Boot API in background..."
   API_LOG="/tmp/api.log"
-  java -jar /app/app.jar >"${API_LOG}" 2>&1 &
+  JAVA_OPTS="${JAVA_OPTS:--XX:+UseContainerSupport -Xmx384m -Xms128m}"
+  java ${JAVA_OPTS} -jar /app/app.jar >"${API_LOG}" 2>&1 &
   API_PID=$!
 
   (

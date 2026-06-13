@@ -201,7 +201,7 @@ export function graphQLConnectionHint(): string {
 
   if (isUnifiedDeploy()) {
     return (
-      'Go API に接続できません。Railway の Deploy ログで "[unified] API ready" を確認してください。' +
+      'Java API に接続できません。Railway の Deploy ログで "[unified] Java API ready" を確認してください。' +
       ' Variables の API_URL は削除してください（統合デプロイでは不要）。'
     )
   }
