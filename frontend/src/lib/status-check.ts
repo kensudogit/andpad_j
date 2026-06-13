@@ -13,6 +13,7 @@ export type SetupStatus = {
   jwtSecretWarning?: string
   openaiApiKey?: string
   railway?: boolean
+  publicUrl?: string
   hint?: string
 }
 
