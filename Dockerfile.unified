@@ -37,9 +37,7 @@ COPY --from=node-build /app/frontend/public /app/frontend/public
 COPY scripts/start-unified.sh /app/start.sh
 RUN sed -i 's/\r$//' /app/start.sh && chmod +x /app/start.sh
 ENV NODE_ENV=production
-ENV PORT=3000
 ENV API_INTERNAL_PORT=8081
-ENV SERVER_PORT=8081
 ENV API_URL=http://127.0.0.1:8081
 ENV UNIFIED_DEPLOY=1
 EXPOSE 3000

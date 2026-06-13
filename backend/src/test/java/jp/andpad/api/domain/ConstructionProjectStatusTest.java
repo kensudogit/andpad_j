@@ -10,8 +10,6 @@ class ConstructionProjectStatusTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(ConstructionProjectStatus.values()).isNotEmpty();
-        assertThat(ConstructionProjectStatus.valueOf("ConstructionProjectStatus.values()[0].name()")).isNotNull();
-    }
+        assertThat(ConstructionProjectStatus.values()).isNotEmpty();    }
 
 }

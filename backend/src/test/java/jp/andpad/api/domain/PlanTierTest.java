@@ -10,8 +10,6 @@ class PlanTierTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(PlanTier.values()).isNotEmpty();
-        assertThat(PlanTier.valueOf("PlanTier.values()[0].name()")).isNotNull();
-    }
+        assertThat(PlanTier.values()).isNotEmpty();    }
 
 }

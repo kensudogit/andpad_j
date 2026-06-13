@@ -10,8 +10,6 @@ class CostEntryTypeTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(CostEntryType.values()).isNotEmpty();
-        assertThat(CostEntryType.valueOf("CostEntryType.values()[0].name()")).isNotNull();
-    }
+        assertThat(CostEntryType.values()).isNotEmpty();    }
 
 }

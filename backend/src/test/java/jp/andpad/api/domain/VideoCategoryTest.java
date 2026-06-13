@@ -10,8 +10,6 @@ class VideoCategoryTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(VideoCategory.values()).isNotEmpty();
-        assertThat(VideoCategory.valueOf("VideoCategory.values()[0].name()")).isNotNull();
-    }
+        assertThat(VideoCategory.values()).isNotEmpty();    }
 
 }

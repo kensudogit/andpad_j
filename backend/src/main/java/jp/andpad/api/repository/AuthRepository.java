@@ -145,7 +145,7 @@ public class AuthRepository {
         try {
             User user = jdbc.queryForObject(
                     """
-                    SELECT id, email, name, COALESCE(avatar_url, '')
+                    SELECT id, email, name, COALESCE(avatar_url, '') AS avatar_url
                     FROM users WHERE id = ?
                     """,
                     (rs, rowNum) -> new User(

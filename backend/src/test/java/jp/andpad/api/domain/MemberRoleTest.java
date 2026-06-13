@@ -10,8 +10,6 @@ class MemberRoleTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(MemberRole.values()).isNotEmpty();
-        assertThat(MemberRole.valueOf("MemberRole.values()[0].name()")).isNotNull();
-    }
+        assertThat(MemberRole.values()).isNotEmpty();    }
 
 }

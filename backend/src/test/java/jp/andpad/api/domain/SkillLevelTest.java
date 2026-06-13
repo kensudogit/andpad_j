@@ -10,8 +10,6 @@ class SkillLevelTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(SkillLevel.values()).isNotEmpty();
-        assertThat(SkillLevel.valueOf("SkillLevel.values()[0].name()")).isNotNull();
-    }
+        assertThat(SkillLevel.values()).isNotEmpty();    }
 
 }

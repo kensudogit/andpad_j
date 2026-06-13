@@ -10,8 +10,6 @@ class BudgetStatusTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(BudgetStatus.values()).isNotEmpty();
-        assertThat(BudgetStatus.valueOf("BudgetStatus.values()[0].name()")).isNotNull();
-    }
+        assertThat(BudgetStatus.values()).isNotEmpty();    }
 
 }

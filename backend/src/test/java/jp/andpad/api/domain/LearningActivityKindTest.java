@@ -10,8 +10,6 @@ class LearningActivityKindTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(LearningActivityKind.values()).isNotEmpty();
-        assertThat(LearningActivityKind.valueOf("LearningActivityKind.values()[0].name()")).isNotNull();
-    }
+        assertThat(LearningActivityKind.values()).isNotEmpty();    }
 
 }

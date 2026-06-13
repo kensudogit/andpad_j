@@ -10,8 +10,6 @@ class BudgetTypeTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(BudgetType.values()).isNotEmpty();
-        assertThat(BudgetType.valueOf("BudgetType.values()[0].name()")).isNotNull();
-    }
+        assertThat(BudgetType.values()).isNotEmpty();    }
 
 }

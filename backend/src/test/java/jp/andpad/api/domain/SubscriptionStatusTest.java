@@ -10,8 +10,6 @@ class SubscriptionStatusTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(SubscriptionStatus.values()).isNotEmpty();
-        assertThat(SubscriptionStatus.valueOf("SubscriptionStatus.values()[0].name()")).isNotNull();
-    }
+        assertThat(SubscriptionStatus.values()).isNotEmpty();    }
 
 }

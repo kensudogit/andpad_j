@@ -46,7 +46,6 @@ if external_api_healthy; then
 fi
 
 export API_INTERNAL_PORT="${API_PORT}"
-export SERVER_PORT="${API_PORT}"
 export API_URL="http://127.0.0.1:${API_PORT}"
 export UNIFIED_DEPLOY=1
 
@@ -84,7 +83,11 @@ else
   echo "[unified] starting Spring Boot API in background..."
   API_LOG="/tmp/api.log"
   JAVA_OPTS="${JAVA_OPTS:--XX:+UseContainerSupport -Xmx384m -Xms128m}"
-  java ${JAVA_OPTS} -jar /app/app.jar >"${API_LOG}" 2>&1 &
+  # Railway の PORT は Next.js 用。Go 版と同様 API 子プロセスだけ PORT=8081 にする。
+  (
+    SERVER_PORT="${API_PORT}" PORT="${API_PORT}" \
+      java ${JAVA_OPTS} -Dserver.port="${API_PORT}" -jar /app/app.jar
+  ) >"${API_LOG}" 2>&1 &
   API_PID=$!
 
   (

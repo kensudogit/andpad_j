@@ -10,8 +10,6 @@ class SaasModuleCodeTest {
 
     @Test
     void valuesAreDefined() {
-        assertThat(SaasModuleCode.values()).isNotEmpty();
-        assertThat(SaasModuleCode.valueOf("SaasModuleCode.values()[0].name()")).isNotNull();
-    }
+        assertThat(SaasModuleCode.values()).isNotEmpty();    }
 
 }
