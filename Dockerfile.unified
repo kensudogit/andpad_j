@@ -40,5 +40,6 @@ ENV NODE_ENV=production
 ENV API_INTERNAL_PORT=8081
 ENV API_URL=http://127.0.0.1:8081
 ENV UNIFIED_DEPLOY=1
+ENV NODE_OPTIONS=--max-old-space-size=512
 EXPOSE 3000
 CMD ["/bin/sh", "/app/start.sh"]

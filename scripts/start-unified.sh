@@ -1,6 +1,5 @@
 #!/bin/sh
 # Railway 統合デプロイ: Spring Boot API (8081) + Next.js (PORT) を同一コンテナで起動。
-# Next.js を先に起動して Railway /health を通し、API はバックグラウンドで起動する。
 set -e
 
 WEB_PORT="${PORT:-3000}"
@@ -58,56 +57,85 @@ fi
 
 echo "[unified] web=${WEB_PORT} api=${API_PORT}"
 echo "[unified] DATABASE_URL=$(env_state "${DATABASE_URL:-}")"
+echo "[unified] DATABASE_PRIVATE_URL=$(env_state "${DATABASE_PRIVATE_URL:-}")"
+echo "[unified] PGHOST=$(env_state "${PGHOST:-}")"
 echo "[unified] JWT_SECRET=$(env_state "${JWT_SECRET:-}")"
 
 db_configured=0
 if [ -n "${DATABASE_URL:-}" ] && ! ref_unresolved "${DATABASE_URL}"; then
   db_configured=1
 elif [ -n "${DATABASE_PRIVATE_URL:-}" ] && ! ref_unresolved "${DATABASE_PRIVATE_URL}"; then
+  export DATABASE_URL="${DATABASE_PRIVATE_URL}"
   db_configured=1
 elif [ -n "${PGHOST:-}" ] && ! ref_unresolved "${PGHOST}"; then
   db_configured=1
 fi
 
+start_java_api() {
+  echo "[unified] starting Spring Boot API in background..."
+  API_LOG="/tmp/api.log"
+  : >"${API_LOG}"
+  JAVA_OPTS="${JAVA_OPTS:--XX:+UseContainerSupport -Xmx256m -Xms128m -XX:MaxMetaspaceSize=128m}"
+
+  (
+    export DATABASE_URL="${DATABASE_URL:-}"
+    export DATABASE_PRIVATE_URL="${DATABASE_PRIVATE_URL:-}"
+    export JWT_SECRET="${JWT_SECRET:-}"
+    export OPENAI_API_KEY="${OPENAI_API_KEY:-}"
+    export PGHOST="${PGHOST:-}"
+    export PGUSER="${PGUSER:-}"
+    export PGPASSWORD="${PGPASSWORD:-}"
+    export PGDATABASE="${PGDATABASE:-}"
+    export PGPORT="${PGPORT:-}"
+    SERVER_PORT="${API_PORT}" PORT="${API_PORT}" \
+      exec java ${JAVA_OPTS} \
+        -Dserver.port="${API_PORT}" \
+        -Dserver.address=0.0.0.0 \
+        -Dspring.main.cloud-platform=NONE \
+        -jar /app/app.jar
+  ) >>"${API_LOG}" 2>&1 &
+  API_PID=$!
+  echo "[unified] Java API pid=${API_PID}"
+
+  echo "[unified] waiting for Java API on 127.0.0.1:${API_PORT}..."
+  i=0
+  while [ "$i" -lt 360 ]; do
+    if curl -sf "http://127.0.0.1:${API_PORT}/health" >/dev/null 2>&1; then
+      echo "[unified] Java API ready on 127.0.0.1:${API_PORT}"
+      return 0
+    fi
+    if ! kill -0 "$API_PID" 2>/dev/null; then
+      echo "[unified] ERROR: Java API exited before becoming ready"
+      tail -n 80 "${API_LOG}" 2>/dev/null || true
+      return 1
+    fi
+    i=$((i + 1))
+    sleep 0.5
+  done
+
+  echo "[unified] ERROR: Java API not ready after 180s"
+  tail -n 80 "${API_LOG}" 2>/dev/null || true
+  return 1
+}
+
 if [ "$db_configured" -eq 0 ]; then
   echo "[unified] WARNING: DATABASE_URL is not configured — API will not start"
   echo "[unified]   Service → Variables → Reference → Postgres → DATABASE_URL"
+  if [ -n "${RAILWAY_ENVIRONMENT:-}" ] || [ -n "${RAILWAY_PROJECT_ID:-}" ]; then
+    echo "[unified] FATAL: cannot run on Railway without DATABASE_URL"
+    exit 1
+  fi
 elif ref_unresolved "${DATABASE_URL:-}"; then
   echo "[unified] WARNING: DATABASE_URL looks like an unresolved Railway reference"
-  db_configured=0
+  if [ -n "${RAILWAY_ENVIRONMENT:-}" ] || [ -n "${RAILWAY_PROJECT_ID:-}" ]; then
+    echo "[unified] FATAL: fix DATABASE_URL reference and redeploy"
+    exit 1
+  fi
 else
   if [ -z "${JWT_SECRET:-}" ] || [ "${JWT_SECRET}" = "dev-only-change-in-production-min-32-chars" ]; then
     echo "[unified] WARNING: set a strong JWT_SECRET (32+ chars) on Railway"
   fi
-
-  echo "[unified] starting Spring Boot API in background..."
-  API_LOG="/tmp/api.log"
-  JAVA_OPTS="${JAVA_OPTS:--XX:+UseContainerSupport -Xmx384m -Xms128m}"
-  # Railway の PORT は Next.js 用。Go 版と同様 API 子プロセスだけ PORT=8081 にする。
-  (
-    SERVER_PORT="${API_PORT}" PORT="${API_PORT}" \
-      java ${JAVA_OPTS} -Dserver.port="${API_PORT}" -jar /app/app.jar
-  ) >"${API_LOG}" 2>&1 &
-  API_PID=$!
-
-  (
-    i=0
-    while [ "$i" -lt 240 ]; do
-      if curl -sf "http://127.0.0.1:${API_PORT}/health" >/dev/null 2>&1; then
-        echo "[unified] Java API ready on 127.0.0.1:${API_PORT}"
-        exit 0
-      fi
-      if ! kill -0 "$API_PID" 2>/dev/null; then
-        echo "[unified] ERROR: Java API exited before becoming ready"
-        tail -n 40 "${API_LOG}" 2>/dev/null || true
-        exit 1
-      fi
-      i=$((i + 1))
-      sleep 0.5
-    done
-    echo "[unified] WARNING: Java API not ready after 120s (GraphQL may return 503 until ready)"
-    tail -n 20 "${API_LOG}" 2>/dev/null || true
-  ) &
+  start_java_api
 fi
 
 echo "[unified] starting Next.js on ${WEB_PORT} (Railway healthcheck)"
