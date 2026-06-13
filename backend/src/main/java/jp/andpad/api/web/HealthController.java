@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jp.andpad.api.domain.Health;
 import jp.andpad.api.service.RuntimeStatusService;
+
 import lombok.RequiredArgsConstructor;
 
 @RestController

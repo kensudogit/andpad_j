@@ -29,13 +29,19 @@ public class RuntimeStatusService {
 
     public Map<String, Object> setupStatus(boolean postgresConnected) {
         Map<String, Object> out = new LinkedHashMap<>();
+        String dbSource = resolveDatabaseSource();
         out.put("postgres", postgresConnected);
+        out.put("databaseSource", StringUtils.hasText(dbSource) ? dbSource : "none");
         out.put("databaseUrl", envPresence("DATABASE_URL"));
         out.put("databasePrivateUrl", envPresence("DATABASE_PRIVATE_URL"));
         out.put("pgHost", envPresence("PGHOST"));
         out.put("jwtSecret", StringUtils.hasText(System.getenv("JWT_SECRET")) ? "set" : "empty");
         out.put("openaiApiKey", envPresence("OPENAI_API_KEY"));
         out.put("railway", isRailway());
+        String publicDomain = System.getenv("RAILWAY_PUBLIC_DOMAIN");
+        if (StringUtils.hasText(publicDomain) && !publicDomain.contains("${{")) {
+            out.put("publicUrl", "https://" + publicDomain.trim());
+        }
 
         String jwtWarning = jwtSecretWarning(System.getenv("JWT_SECRET"));
         if (StringUtils.hasText(jwtWarning)) {
@@ -51,6 +57,21 @@ public class RuntimeStatusService {
             out.put("openaiHint", "AI チャットボット / AI Board 用に OPENAI_API_KEY を Variables に追加して Redeploy してください。");
         }
         return out;
+    }
+
+    private static String resolveDatabaseSource() {
+        for (String key :
+                new String[] {"DATABASE_URL", "DATABASE_PRIVATE_URL", "POSTGRES_URL", "POSTGRES_PRIVATE_URL"}) {
+            String value = System.getenv(key);
+            if (StringUtils.hasText(value) && !value.contains("${{")) {
+                return key;
+            }
+        }
+        String pgHost = System.getenv("PGHOST");
+        if (StringUtils.hasText(pgHost) && !pgHost.contains("${{")) {
+            return "PGHOST";
+        }
+        return "";
     }
 
     private static boolean isRailway() {

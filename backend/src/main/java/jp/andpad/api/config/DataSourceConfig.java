@@ -25,7 +25,7 @@ public class DataSourceConfig {
     @Primary
     DataSource dataSource(DataSourceProperties props) {
         String raw = DatabaseUrlSupport.resolveRawUrl(props.getUrl());
-        if (raw != null && (raw.startsWith("postgresql://") || raw.startsWith("jdbc:postgresql://"))) {
+        if (DatabaseUrlSupport.isPostgresUrl(raw)) {
             DatabaseUrlSupport.applyCredentialsFromUrl(props, raw);
             props.setUrl(DatabaseUrlSupport.normalizeForJdbc(raw));
         }

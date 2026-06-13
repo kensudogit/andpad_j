@@ -12,7 +12,10 @@ import org.springframework.util.StringUtils;
 final class DatabaseUrlSupport {
 
     private static final Pattern USER_INFO =
-            Pattern.compile("^(?:jdbc:)?postgresql://([^/@]+@)");
+            Pattern.compile("^(?:jdbc:)?postgres(?:ql)?://([^@]+@)");
+
+    private static final Pattern JDBC_USER_INFO =
+            Pattern.compile("^(jdbc:postgresql://)[^@]+@(.+)$");
 
     private DatabaseUrlSupport() {}
 
@@ -31,17 +34,53 @@ final class DatabaseUrlSupport {
         return fallback;
     }
 
+    /** どの環境変数から DB URL を解決したか（/status 診断用）。 */
+    static String resolveDatabaseSource() {
+        for (String key :
+                new String[] {"DATABASE_URL", "DATABASE_PRIVATE_URL", "POSTGRES_URL", "POSTGRES_PRIVATE_URL"}) {
+            String value = System.getenv(key);
+            if (StringUtils.hasText(value) && !value.contains("${{")) {
+                return key;
+            }
+        }
+        if (fromPgComponents() != null) {
+            return "PGHOST";
+        }
+        return "";
+    }
+
+    static boolean isPostgresUrl(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return false;
+        }
+        String lower = raw.trim().toLowerCase();
+        return lower.startsWith("postgresql://")
+                || lower.startsWith("postgres://")
+                || lower.startsWith("jdbc:postgresql://")
+                || lower.startsWith("jdbc:postgres://");
+    }
+
     static String normalizeForJdbc(String raw) {
         if (!StringUtils.hasText(raw)) {
             return raw;
         }
         String url = raw.trim();
+
+        if (url.startsWith("jdbc:postgres://")) {
+            url = "jdbc:postgresql://" + url.substring("jdbc:postgres://".length());
+        } else if (url.startsWith("postgres://")) {
+            url = "postgresql://" + url.substring("postgres://".length());
+        }
+
         if (url.startsWith("postgresql://")) {
             url = "jdbc:" + url;
         }
+
         if (!url.startsWith("jdbc:postgresql://")) {
             return url;
         }
+
+        url = stripUserInfoFromJdbcUrl(url);
         return appendSslModeIfMissing(url);
     }
 
@@ -65,6 +104,14 @@ final class DatabaseUrlSupport {
         if (parts.length > 1) {
             props.setPassword(decode(parts[1]));
         }
+    }
+
+    private static String stripUserInfoFromJdbcUrl(String jdbcUrl) {
+        Matcher matcher = JDBC_USER_INFO.matcher(jdbcUrl);
+        if (matcher.matches()) {
+            return matcher.group(1) + matcher.group(2);
+        }
+        return jdbcUrl;
     }
 
     private static String fromPgComponents() {

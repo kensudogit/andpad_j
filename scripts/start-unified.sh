@@ -1,5 +1,6 @@
 #!/bin/sh
 # Railway 統合デプロイ: Spring Boot API (8081) + Next.js (PORT) を同一コンテナで起動。
+# Go 版と同様、API 未起動でも Next.js を起動し /api/status で診断できるようにする。
 set -e
 
 WEB_PORT="${PORT:-3000}"
@@ -28,7 +29,7 @@ external_api_healthy() {
     http://*|https://*)
       api_base="${API_URL%/}"
       body="$(curl -sf --max-time 8 "${api_base}/health" 2>/dev/null)" || return 1
-      echo "$body" | grep -qE '"ok"\s*:\s*true|"service"\s*:\s*"(andpad-api|andpad-web|dental-video-api)"' || return 1
+      echo "$body" | grep -qE '"ok"\s*:\s*true|"service"\s*:\s*"(andpad-api|dental-video-api)"' || return 1
       return 0
       ;;
     *)
@@ -71,7 +72,17 @@ elif [ -n "${PGHOST:-}" ] && ! ref_unresolved "${PGHOST}"; then
   db_configured=1
 fi
 
-start_java_api() {
+if [ "$db_configured" -eq 0 ]; then
+  echo "[unified] WARNING: DATABASE_URL is not configured — API will not start"
+  echo "[unified]   andpad_j service → Variables → Reference → Postgres → DATABASE_URL"
+elif ref_unresolved "${DATABASE_URL:-}"; then
+  echo "[unified] WARNING: DATABASE_URL looks like an unresolved Railway reference (\${{...}})"
+  echo "[unified]   Fix the variable reference on the app service, then Redeploy"
+else
+  if [ -z "${JWT_SECRET:-}" ] || [ "${JWT_SECRET}" = "dev-only-change-in-production-min-32-chars" ]; then
+    echo "[unified] WARNING: set a strong JWT_SECRET (32+ chars) on Railway"
+  fi
+
   echo "[unified] starting Spring Boot API in background..."
   API_LOG="/tmp/api.log"
   : >"${API_LOG}"
@@ -97,45 +108,24 @@ start_java_api() {
   API_PID=$!
   echo "[unified] Java API pid=${API_PID}"
 
-  echo "[unified] waiting for Java API on 127.0.0.1:${API_PORT}..."
-  i=0
-  while [ "$i" -lt 360 ]; do
-    if curl -sf "http://127.0.0.1:${API_PORT}/health" >/dev/null 2>&1; then
-      echo "[unified] Java API ready on 127.0.0.1:${API_PORT}"
-      return 0
-    fi
-    if ! kill -0 "$API_PID" 2>/dev/null; then
-      echo "[unified] ERROR: Java API exited before becoming ready"
-      tail -n 80 "${API_LOG}" 2>/dev/null || true
-      return 1
-    fi
-    i=$((i + 1))
-    sleep 0.5
-  done
-
-  echo "[unified] ERROR: Java API not ready after 180s"
-  tail -n 80 "${API_LOG}" 2>/dev/null || true
-  return 1
-}
-
-if [ "$db_configured" -eq 0 ]; then
-  echo "[unified] WARNING: DATABASE_URL is not configured — API will not start"
-  echo "[unified]   Service → Variables → Reference → Postgres → DATABASE_URL"
-  if [ -n "${RAILWAY_ENVIRONMENT:-}" ] || [ -n "${RAILWAY_PROJECT_ID:-}" ]; then
-    echo "[unified] FATAL: cannot run on Railway without DATABASE_URL"
-    exit 1
-  fi
-elif ref_unresolved "${DATABASE_URL:-}"; then
-  echo "[unified] WARNING: DATABASE_URL looks like an unresolved Railway reference"
-  if [ -n "${RAILWAY_ENVIRONMENT:-}" ] || [ -n "${RAILWAY_PROJECT_ID:-}" ]; then
-    echo "[unified] FATAL: fix DATABASE_URL reference and redeploy"
-    exit 1
-  fi
-else
-  if [ -z "${JWT_SECRET:-}" ] || [ "${JWT_SECRET}" = "dev-only-change-in-production-min-32-chars" ]; then
-    echo "[unified] WARNING: set a strong JWT_SECRET (32+ chars) on Railway"
-  fi
-  start_java_api
+  (
+    i=0
+    while [ "$i" -lt 360 ]; do
+      if curl -sf "http://127.0.0.1:${API_PORT}/health" >/dev/null 2>&1; then
+        echo "[unified] Java API ready on 127.0.0.1:${API_PORT}"
+        exit 0
+      fi
+      if ! kill -0 "$API_PID" 2>/dev/null; then
+        echo "[unified] ERROR: Java API exited before becoming ready"
+        tail -n 80 "${API_LOG}" 2>/dev/null || true
+        exit 1
+      fi
+      i=$((i + 1))
+      sleep 0.5
+    done
+    echo "[unified] WARNING: Java API not ready after 180s (login/GraphQL may return 502 until ready)"
+    tail -n 40 "${API_LOG}" 2>/dev/null || true
+  ) &
 fi
 
 echo "[unified] starting Next.js on ${WEB_PORT} (Railway healthcheck)"

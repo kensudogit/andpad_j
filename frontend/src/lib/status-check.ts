@@ -90,6 +90,16 @@ function localSetupWhenApiDown(): SetupStatus {
     jwtSecretWarning: jwtSecretWarningMsg,
     openaiApiKey,
     railway,
+    databaseSource: dbConfigured()
+      ? envPresence('DATABASE_URL') !== 'empty'
+        ? 'DATABASE_URL'
+        : envPresence('DATABASE_PRIVATE_URL') !== 'empty'
+          ? 'DATABASE_PRIVATE_URL'
+          : 'PGHOST'
+      : 'none',
+    publicUrl: process.env.RAILWAY_PUBLIC_DOMAIN?.trim()
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN.trim()}`
+      : undefined,
     hint,
   }
 }
