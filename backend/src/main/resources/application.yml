@@ -8,7 +8,8 @@ spring:
   main:
     cloud-platform: NONE
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5434/andpad}
+    # DATABASE_URL は DataSourceConfig が環境変数から解決（Railway postgresql:// 対応）
+    url: jdbc:postgresql://localhost:5434/andpad
     username: ${DB_USER:andpad}
     password: ${DB_PASSWORD:andpad}
     driver-class-name: org.postgresql.Driver
