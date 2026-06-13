@@ -4,38 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Testcontainers
-class AndpadSmokeTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("andpad")
-            .withUsername("andpad")
-            .withPassword("andpad");
-
-    @DynamicPropertySource
-    static void configure(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("app.jwt.secret", () -> "test-jwt-secret-at-least-32-characters-long");
-    }
+/** 主要フローの統合スモークテスト（個別 *Test クラスと併用）。 */
+class AndpadSmokeTest extends AbstractIntegrationTest {
 
     @Autowired
-    MockMvc mockMvc;
+    private jp.andpad.api.repository.AuthRepository authRepository;
 
     @Test
     void healthReturnsOk() throws Exception {
@@ -102,16 +78,8 @@ class AndpadSmokeTest {
                         .value("rag-1"));
     }
 
-    private String loginToken() throws Exception {
-        MvcResult login = mockMvc.perform(
-                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/auth/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("""
-                                        {"email":"demo@sakura-dental.jp","password":"demo1234"}
-                                        """))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk())
-                .andReturn();
-        String body = login.getResponse().getContentAsString();
-        return body.replaceAll(".*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+    @Test
+    void authRepositoryFindsDemoUser() {
+        assertThat(authRepository.findUserByEmail("demo@sakura-dental.jp")).isPresent();
     }
 }

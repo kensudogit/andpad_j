@@ -35,7 +35,7 @@ public class AuthRepository {
         try {
             return Optional.of(jdbc.queryForObject(
                     """
-                    SELECT id, email, name, COALESCE(avatar_url, '')
+                    SELECT id, email, name, COALESCE(avatar_url, '') AS avatar_url
                     FROM users WHERE LOWER(email) = ?
                     """,
                     (rs, rowNum) -> new User(
