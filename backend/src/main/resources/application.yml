@@ -30,6 +30,9 @@ app:
   jwt:
     secret: ${JWT_SECRET:dev-only-change-in-production-min-32-chars}
     ttl-hours: 72
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-4o-mini}
 
 management:
   endpoints:

@@ -122,7 +122,18 @@ public class ConsultRagRepository {
         return new ConsultThread(id, title, Dates.format(Dates.now()), List.of());
     }
 
-    public boolean verifyThreadAccess(String orgId, String userId, String threadId) {
+    public boolean verifyThreadAccess(String orgId, String userId, String threadId, boolean orgWide) {
+        if (orgWide) {
+            Integer count = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*) FROM consultation_threads
+                    WHERE id = ? AND org_id = ?
+                    """,
+                    Integer.class,
+                    threadId,
+                    orgId);
+            return count != null && count > 0;
+        }
         Integer count = jdbc.queryForObject(
                 """
                 SELECT COUNT(*) FROM consultation_threads
