@@ -221,11 +221,15 @@ export function ChatModuleClient() {
   )
 }
 
-function formatGqlError(err: { message?: string } | undefined, fallback: string): string | null {
+function formatGqlError(
+  err: { message?: string; graphQLErrors?: ReadonlyArray<{ message: string }> } | undefined,
+  fallback: string,
+): string | null {
   if (!err) return null
-  const msg = err.message ?? ''
+  const gqlMsg = err.graphQLErrors?.[0]?.message
+  const msg = gqlMsg ?? err.message ?? ''
   const lower = msg.toLowerCase()
-  if (lower === 'forbidden') {
+  if (lower === 'forbidden' || lower === 'authentication required') {
     return ui.saasLoginHint
   }
   if (isAuthRequiredGraphQLError(err as Parameters<typeof isAuthRequiredGraphQLError>[0])) {

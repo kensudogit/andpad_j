@@ -9,14 +9,21 @@ type GraphQLErrorLike = {
   networkError?: Error | null
 }
 
+/** Spring GraphQL の INTERNAL_ERROR（未認証時の UUID メッセージ等） */
+function messageLooksInternalOpaqueError(message: string): boolean {
+  return /^internal_error for [0-9a-f-]{36}$/i.test(message.trim())
+}
+
 /** メッセージ文字列から認証必須エラーか推定 */
 function messageLooksAuthRequired(message: string): boolean {
   const m = message.toLowerCase()
   return (
     m.includes('forbidden') ||
     m.includes('unauthorized') ||
+    m.includes('authentication required') ||
     m.includes('sign in') ||
-    m.includes('login')
+    m.includes('login') ||
+    messageLooksInternalOpaqueError(message)
   )
 }
 

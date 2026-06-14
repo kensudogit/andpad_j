@@ -35,9 +35,12 @@ public class AuthService {
     }
 
     public Session currentSession() {
-        String userId = TenantContext.userId();
-        String orgId = TenantContext.orgId();
-        Optional<LoginResult> result = authRepository.sessionByUser(userId, orgId);
+        Optional<AuthPrincipal> principal = TenantContext.principal();
+        if (principal.isEmpty()) {
+            return null;
+        }
+        AuthPrincipal p = principal.get();
+        Optional<LoginResult> result = authRepository.sessionByUser(p.userId(), p.orgId());
         return result.map(this::toSession).orElse(null);
     }
 
